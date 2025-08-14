@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневной трекер привычек</title>
+    <style>
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .tracker-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .date-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .trackers-section {
+            flex: 2;
+            min-width: 500px;
+            padding: 20px;
+            border-left: 1px solid #eee;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary);
+            font-size: 1.4rem;
+        }
+        
+        .date-controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        #current-date {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--dark);
+            margin-right: 20px;
+        }
+        
+        .date-nav {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.1);
+        }
+        
+        #date-picker {
+            padding: 10px 15px;
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 250px;
+            margin-top: 15px;
+        }
+        
+        .trackers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .tracker-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tracker-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .tracker-card.selected {
+            border-color: var(--success);
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+        
+        .tracker-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .tracker-card.selected .tracker-icon {
+            color: var(--success);
+        }
+        
+        .tracker-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .tracker-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+            line-height: 1.4;
+        }
+        
+        .streak-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--warning);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .summary {
+            background: var(--light);
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            min-width: 150px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        #save-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(78, 84, 200, 0.4);
+        }
+        
+        #save-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(78, 84, 200, 0.6);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .trackers-section {
+                border-left: none;
+                border-top: 1px solid #eee;
+            }
+            
+            .date-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            #current-date {
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tracker-container">
+        <div class="header">
+            <h1>Дневной трекер привычек</h1>
+            <p>Отслеживайте ваши ежедневные достижения и формируйте полезные привычки</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="date-section">
+                <h2 class="section-title">Выбор даты</h2>
+                <div class="date-controls">
+                    <div id="current-date">15 мая 2024</div>
+                    <div class="date-nav">
+                        <button class="nav-btn" id="prev-day">←</button>
+                        <button class="nav-btn" id="today">Сегодня</button>
+                        <button class="nav-btn" id="next-day">→</button>
+                    </div>
+                </div>
+                <input type="date" id="date-picker">
+                
+                <h2 class="section-title" style="margin-top: 30px;">Ваши трекеры</h2>
+                <p>Выберите трекеры, которые вы хотите использовать:</p>
+                
+                <div class="tracker-list">
+                    <div class="tracker-item">
+                        <input type="checkbox" id="mood-tracker" checked>
+                        <label for="mood-tracker">Настроение дня</label>
+                    </div>
+                    <div class="tracker-item">
+                        <input type="checkbox" id="productivity-tracker" checked>
+                        <label for="productivity-tracker">Продуктивность</label>
+                    </div>
+                    <div class="tracker-item">
+                        <input type="checkbox" id="sport-tracker">
+                        <label for="sport-tracker">Физическая активность</label>
+                    </div>
+                    <div class="tracker-item">
+                        <input type="checkbox" id="reading-tracker" checked>
+                        <label for="reading-tracker">Чтение</label>
+                    </div>
+                    <div class="tracker-item">
+                        <input type="checkbox" id="water-tracker">
+                        <label for="water-tracker">Питьевой режим</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="trackers-section">
+                <h2 class="section-title">Отметки за сегодня</h2>
+                <p>Выберите, что вы сделали сегодня:</p>
+                
+                <div class="trackers-grid">
+                    <div class="tracker-card" data-id="mood_happy">
+                        <div class="tracker-icon">😊</div>
+                        <div class="tracker-name">Хорошее настроение</div>
+                        <div class="tracker-desc">День прошел позитивно</div>
+                        <div class="streak-counter">3</div>
+                    </div>
+                    
+                    <div class="tracker-card" data-id="productivity">
+                        <div class="tracker-icon">📊</div>
+                        <div class="tracker-name">Продуктивный день</div>
+                        <div class="tracker-desc">Выполнены все задачи</div>
+                        <div class="streak-counter">5</div>
+                    </div>
+                    
+                    <div class="tracker-card" data-id="sport">
+                        <div class="tracker-icon">💪</div>
+                        <div class="tracker-name">Физическая активность</div>
+                        <div class="tracker-desc">Тренировка или прогулка</div>
+                        <div class="streak-counter">2</div>
+                    </div>
+                    
+                    <div class="tracker-card" data-id="reading">
+                        <div class="tracker-icon">📚</div>
+                        <div class="tracker-name">Чтение</div>
+                        <div class="tracker-desc">Прочитано 20+ страниц</div>
+                        <div class="streak-counter">7</div>
+                    </div>
+                    
+                    <div class="tracker-card" data-id="water">
+                        <div class="tracker-icon">💧</div>
+                        <div class="tracker-name">Питьевой режим</div>
+                        <div class="tracker-desc">Выпито 1.5+ литров воды</div>
+                        <div class="streak-counter">4</div>
+                    </div>
+                    
+                    <div class="tracker-card" data-id="meditation">
+                        <div class="tracker-icon">🧘</div>
+                        <div class="tracker-name">Медитация</div>
+                        <div class="tracker-desc">10+ минут осознанности</div>
+                        <div class="streak-counter">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h3>Итоги дня</h3>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Активных трекера</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Выполнено сегодня</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Дней подряд</div>
+                </div>
+            </div>
+            <button id="save-btn">Сохранить отметки</button>
+        </div>
+        
+        <div class="footer">
+            Трекер привычек • Обновлено: 15 мая 2024
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Установка текущей даты
+            const currentDateEl = document.getElementById('current-date');
+            const datePicker = document.getElementById('date-picker');
+            const today = new Date();
+            
+            // Форматирование даты
+            function formatDate(date) {
+                const options = { day: 'numeric', month: 'long', year: 'numeric' };
+                return date.toLocaleDateString('ru-RU', options);
+            }
+            
+            // Инициализация даты
+            currentDateEl.textContent = formatDate(today);
+            datePicker.valueAsDate = today;
+            
+            // Обработчики навигации по датам
+            document.getElementById('prev-day').addEventListener('click', function() {
+                const newDate = new Date(today);
+                newDate.setDate(today.getDate() - 1);
+                updateDate(newDate);
+            });
+            
+            document.getElementById('next-day').addEventListener('click', function() {
+                const newDate = new Date(today);
+                newDate.setDate(today.getDate() + 1);
+                updateDate(newDate);
+            });
+            
+            document.getElementById('today').addEventListener('click', function() {
+                updateDate(new Date());
+            });
+            
+            // Обработчик выбора даты
+            datePicker.addEventListener('change', function() {
+                updateDate(new Date(this.value));
+            });
+            
+            // Обновление даты
+            function updateDate(date) {
+                today.setTime(date.getTime());
+                currentDateEl.textContent = formatDate(date);
+                datePicker.valueAsDate = date;
+            }
+            
+            // Обработчики выбора трекеров
+            const trackerCards = document.querySelectorAll('.tracker-card');
+            trackerCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    this.classList.toggle('selected');
+                    updateSummary();
+                });
+            });
+            
+            // Обновление сводки
+            function updateSummary() {
+                const selected = document.querySelectorAll('.tracker-card.selected').length;
+                document.querySelector('.stat-box:nth-child(2) .stat-value').textContent = selected;
+            }
+            
+            // Кнопка сохранения
+            document.getElementById('save-btn').addEventListener('click', function() {
+                this.textContent = 'Сохранено!';
+                this.style.background = 'linear-gradient(to right, var(--success), #66bb6a)';
+                
+                setTimeout(() => {
+                    this.textContent = 'Сохранить отметки';
+                    this.style.background = 'linear-gradient(to right, var(--primary), var(--secondary))';
+                }, 2000);
+            });
+            
+            // Инициализация сводки
+            updateSummary();
+            
+            // Анимация при загрузке
+            setTimeout(() => {
+                document.querySelector('.tracker-container').style.opacity = '1';
+                document.querySelector('.tracker-container').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
